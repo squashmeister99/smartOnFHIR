@@ -50,7 +50,7 @@ const smartSettings = {
 //    parameter. It is like "iss" but will bypass the authorization (only useful
 //    in testing and development). Example:
 //    https://c0che.sse.codesandbox.io/launch?fhirServiceUrl=https://launch.smarthealthit.org/v/r3/fhir
-app.get("/launch5", (req, res, next) => {
+app.get("/test/provider", (req, res, next) => {
     console.log(req.query);
     smartSettings.iss = req.query.iss;
     smart(req, res).authorize(smartSettings).catch(next);
