@@ -93,16 +93,17 @@ async function getEndpoints(apiBaseUrl, epicClientId) {
     let queryParams = new URLSearchParams();
     queryParams.append('response_type', 'code');
     queryParams.append('client_id', epicClientId);
-    queryParams.append('redirect_uri', encodeURIComponent(redirectUri));
+    queryParams.append('redirect_uri', redirectUri);
     queryParams.append('state', state);
     queryParams.append('scope', scope);
     queryParams.append('launch', launchToken);
-    queryParams.append('aud', encodeURIComponent(aud));
+    queryParams.append('aud', aud);
     if (pkce) {
       queryParams.append('code_challenge', pkce.code_challenge);
       queryParams.append('code_challenge_method', pkce.code_challenge_method);
     }
   
+    console.log(queryParams.toString());
 
     let rawLocation;
     try {
@@ -114,14 +115,13 @@ async function getEndpoints(apiBaseUrl, epicClientId) {
         retry: {
           limit: 10,
         },
-        followRedirect: false,
+        followRedirect: true,
         searchParams: queryParams,
         headers: {
           'User-Agent': userAgent,
         },
       });
 
-      //console.log(response);
 
       /* Extract response parameters from the redirect_uri query string.
        */
@@ -155,7 +155,7 @@ async function getEndpoints(apiBaseUrl, epicClientId) {
         );
       }
     } catch (error) {
-
+      console.log(error);
       let reason;
       if (error.name === 'RequestError') {
         reason = 'Unable to connect to EPIC';
@@ -177,6 +177,56 @@ async function getEndpoints(apiBaseUrl, epicClientId) {
     return null;
   }
 
+  async function getAuthorizationCode2(
+    authorizeUri,
+    epicClientId,
+    launchToken,
+    aud,
+    redirectUri,
+    scope,
+    state,
+    pkce = null
+  ) {
+    console.log(
+      'Requesting authorization code from EPIC, url: %s',
+      authorizeUri
+    );
+  
+    let queryParams = new URLSearchParams();
+    queryParams.append('response_type', 'code');
+    queryParams.append('client_id', epicClientId);
+    queryParams.append('redirect_uri', redirectUri);
+    queryParams.append('state', state);
+    queryParams.append('scope', scope);
+    queryParams.append('launch', launchToken);
+    queryParams.append('aud', aud);
+    
+    console.log(queryParams.toString());
+    let response;
+    try {
+      response = await got(authorizeUri, {
+        https: {
+          rejectUnauthorized: false,
+        },
+        timeout: 1000,
+        retry: {
+          limit: 10,
+        },
+        followRedirect: true,
+        searchParams: queryParams,
+        headers: {
+          'User-Agent': userAgent,
+        },
+      });
+
+      console.log("no exception thrown");
+
+    } catch (error) {
+      console.log(error);
+    }
+    return response.body, response.headers ;
+  }
+
 
 
 
@@ -184,5 +234,6 @@ async function getEndpoints(apiBaseUrl, epicClientId) {
 module.exports = {
   getMetaData,
   getEndpoints,
-  getAuthorizationCode
+  getAuthorizationCode,
+  getAuthorizationCode2
 };
