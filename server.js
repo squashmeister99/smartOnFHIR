@@ -94,11 +94,22 @@ app.get("/cerner/test/patient", (req, res, next) => {
 app.get("/callback", (req, res) => {
     console.log(req.query);
     console.log("callback called")
-    smart(req, res).ready().then(client => handler(client, res)).catch(err=>console.log(err));
+    smart(req, res).ready().then(client => handler2(client, res)).catch(err=>console.log(err));
 });
 
 
+async function handler2(client, res) {
+    console.log(`access token = ${client.state.tokenResponse.access_token}`);
+    console.log(`client response = `);
+    console.log(client);
+    res.type("json").send(JSON.stringify(client.state.tokenResponse, null, 4));
+} 
+
 async function handler(client, res) {
+    console.log(`access token = ${client.state.tokenResponse.access_token}`);
+    console.log(`client response = `);
+    console.log(client);
+
     const data = await (
         client.patient.id ? client.patient.read() : client.request("Patient")
     );
