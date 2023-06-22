@@ -4,6 +4,8 @@ const smart   = require("fhirclient");
 const session = require("express-session");
 const epicClient = require('./epicclient');
 const EPIC_CLIENT_ID = "52d7ef24-a2db-4fcd-a347-366c140c0b21";
+const CERNER_CLIENT_ID = "b7cd27bb-e0af-41a8-a11c-c3afe1781449";
+
 const { uuid } = require('uuidv4');
 
 // The SMART state is stored in a session. If you want to clear your session
@@ -16,57 +18,33 @@ app.use(session({
 
 // The settings that we use to connect to our SMART on FHIR server
 const smartSettings = {
-    clientId: EPIC_CLIENT_ID,
+    clientId: CERNER_CLIENT_ID,
     redirectUri: "http://localhost:3000/callback",
-    scope: "launch openid fhirUser",
+    scope: "launch patient launch/Patient patient/Patient.read user/Appointment.read",
     iss: "https://launch.smarthealthit.org/v/r2/sim/eyJrIjoiMSIsImIiOiJzbWFydC03Nzc3NzA1In0/fhir"
 };
 
 
-// =============================================================================
-// LAUNCHING
-// =============================================================================
-// 1. If you remove the iss options and request https://c0che.sse.codesandbox.io/launch
-//    it will throw because the FHIR service url is not known!
-// 2. If an EHR calls it, it will append "launch" and "state" parameters. Try
-//    it by loading https://c0che.sse.codesandbox.io/launch?iss=https://launch.smarthealthit.org/v/r3/fhir&launch=eyJhIjoiMSIsImciOiIxIn0
-// 3. If you only add an "iss" url parameter (no "launch"), you are doing a
-//    "dynamic" standalone launch. The app cannot obtain a launch context but
-//    it is still useful to be able to do that. In addition, the SMART Sandbox
-//    can be used to build a standalone launch url that contains embedded launch
-//    context which may be perfect for previewing you app. For example load this
-//    to launch the app with Angela Montgomery from DSTU-2:
-//    https://c0che.sse.codesandbox.io/launch?iss=https://launch.smarthealthit.org/v/r2/sim/eyJrIjoiMSIsImIiOiJzbWFydC03Nzc3NzA1In0/fhir
-// 4. We have an "iss" authorize option to make this do standalone launch by
-//    default. In this case https://c0che.sse.codesandbox.io/launch will
-//    not throw. Note that the "iss" url parameter takes precedence over the iss
-//    option, so the app will still be launch-able from an EHR.
-// 5. If an open server is passed as an "iss" option, or as "iss" url parameter,
-//    no authorization attempt will be made and we will be redirected to the
-//    redirect_uri (in this case we don't have launch context and there is no
-//    selected patient so we show all patients instead). Try it:
-//    https://c0che.sse.codesandbox.io/launch?iss=https://r3.smarthealthit.org
-// 6. Finally, a "fhirServiceUrl" parameter can be passed as option or as url
-//    parameter. It is like "iss" but will bypass the authorization (only useful
-//    in testing and development). Example:
-//    https://c0che.sse.codesandbox.io/launch?fhirServiceUrl=https://launch.smarthealthit.org/v/r3/fhir
 app.get("/test/provider", (req, res, next) => {
     console.log(req.query);
     smartSettings.iss = req.query.iss;
     smart(req, res).authorize(smartSettings).catch(next);
 });
 
-// =============================================================================
-// APP
-// =============================================================================
-// The app lives at your redirect_uri (in this case that is
-// "https://c0che.sse.codesandbox.io/app"). After waiting for "ready()", you get
-// a client instance that can be used to query the fhir server.
+
 app.get("/callback", (req, res) => {
-    console.log("callback called")
     console.log(req.query);
-    smart(req, res).ready().then(console.log(res.json()));
+    console.log("callback called")
+    smart(req, res).ready().then(client => handler(client, res)).catch(err=>console.log(err));
 });
+
+
+async function handler(client, res) {
+    const data = await (
+        client.patient.id ? client.patient.read() : client.request("Patient")
+    );
+    res.type("json").send(JSON.stringify(data, null, 4));
+} 
 
 app.get("/launch", (req, res) => {
     const { query, method } = req;
@@ -106,7 +84,6 @@ app.get("/launch4", async (req, res) => {
 app.get('/callback', (req, res) => {
     const { query } = req;
     console.log('callback from epic');
-    console.log(query);
     res.json({ query })
   })
 
