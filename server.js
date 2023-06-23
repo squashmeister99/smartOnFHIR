@@ -107,8 +107,6 @@ async function handler2(client, res) {
 
 async function handler(client, res) {
     console.log(`access token = ${client.state.tokenResponse.access_token}`);
-    console.log(`client response = `);
-    console.log(client);
 
     const data = await (
         client.patient.id ? client.patient.read() : client.request("Patient")
