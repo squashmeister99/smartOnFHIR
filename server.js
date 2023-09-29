@@ -37,10 +37,13 @@ const epicProviderSmartSettings = {
 };
 
 app.get("/epic/test/provider", (req, res, next) => {
-    console.log(req.query);
+    //console.log(req.query);
     // set the iss URL received as launch parameter
     epicProviderSmartSettings.iss = req.query.iss;
     smart(req, res).authorize(epicProviderSmartSettings).catch(next);
+    const key = session.SMART_KEY; // random string
+    const state = session[key];
+    console.log(session);
 });
 
 
@@ -92,9 +95,9 @@ app.get("/cerner/test/patient", (req, res, next) => {
 
 // callbacks from all EHRs
 app.get("/callback", (req, res) => {
-    console.log(req.query);
+    //console.log(req.query);
     console.log("callback called")
-    smart(req, res).ready().then(client => handler2(client, res)).catch(err=>console.log(err));
+    smart(req, res).ready().then(client => handler(client, res)).catch(err=>console.log(err));
 });
 
 
@@ -111,7 +114,10 @@ async function handler(client, res) {
     const data = await (
         client.patient.id ? client.patient.read() : client.request("Patient")
     );
-    res.type("json").send(JSON.stringify(data, null, 4));
+
+    // redirect response to portal. Ideally this would be like the extData
+    res.redirect(301, client.state.tokenResponse.portal);
+    //res.type("json").send(JSON.stringify(data, null, 4));
 } 
 
 
