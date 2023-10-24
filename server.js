@@ -190,6 +190,11 @@ app.get('/legacyauth', (req, res) => {
     let encoded = handler.encrypt(querystring.stringify(params));
     let decoded = handler.decrypt(encoded);
     console.log(decoded);
+    let myjsonObject = {};
+    myjsonObject.name="rajesh";
+    myjsonObject.lastname = "vaidya";
+    console.log(myjsonObject);
+    console.log(querystring.stringify(myjsonObject));
     res.json(string_params || req.query.data);
   })
 
