@@ -4,6 +4,9 @@ const smart   = require("fhirclient");
 const session = require("express-session");
 const epicClient = require('./epicclient');
 const { uuid } = require('uuidv4');
+require('dotenv').config();
+const ssohandler = require('./ssohandler.js');
+const querystring = require('querystring');
 
 //EPIC EHR settings
 const EPIC_PROVIDER_CLIENT_ID = "83970d92-5423-40ae-a7bf-e9bc9820b5ee";
@@ -95,16 +98,16 @@ app.get("/cerner/test/patient", (req, res, next) => {
 
 // callbacks from all EHRs
 app.get("/callback", (req, res) => {
-    //console.log(req.query);
-    console.log("callback called")
-    smart(req, res).ready().then(client => handler(client, res)).catch(err=>console.log(err));
+    console.log(req.query);
+    //console.log("callback called")
+    smart(req, res).ready().then(client => handler2(client, res)).catch(err=>console.log(err));
 });
 
 
 async function handler2(client, res) {
-    console.log(`access token = ${client.state.tokenResponse.access_token}`);
-    console.log(`client response = `);
-    console.log(client);
+    //console.log(`access token = ${client.state.tokenResponse.access_token}`);
+    //console.log(`client response = `);
+    //console.log(client);
     res.type("json").send(JSON.stringify(client.state.tokenResponse, null, 4));
 } 
 
@@ -173,6 +176,21 @@ app.get('/redirectPage', (req, res) => {
     console.log('callback to redirect page from epic');
     console.log(query);
     res.json({ query })
+  })
+
+app.get('/legacyauth', (req, res) => {
+    const { query } = req;
+    console.log(req.query.data);
+    let handler = new ssohandler(process.env.password);
+    let string_params = handler.decrypt(req.query.data);
+    console.log(string_params);
+    let params = querystring.parse(string_params);
+    console.log(params);
+    // encode it again and decode it
+    let encoded = handler.encrypt(querystring.stringify(params));
+    let decoded = handler.decrypt(encoded);
+    console.log(decoded);
+    res.json(string_params || req.query.data);
   })
 
 
