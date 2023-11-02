@@ -7,6 +7,7 @@ const { uuid } = require('uuidv4');
 require('dotenv').config();
 const ssohandler = require('./ssohandler.js');
 const querystring = require('querystring');
+const utf8 = require('utf8');
 
 //EPIC EHR settings
 const EPIC_PROVIDER_CLIENT_ID = "83970d92-5423-40ae-a7bf-e9bc9820b5ee";
@@ -181,14 +182,22 @@ app.get('/redirectPage', (req, res) => {
 app.get('/legacyauth', (req, res) => {
     const { query } = req;
     console.log(req.query.data);
-    let handler = new ssohandler(process.env.password);
+    let handler = new ssohandler(utf8.encode(process.env.password));
     let string_params = handler.decrypt(req.query.data);
     console.log(string_params);
     let params = querystring.parse(string_params);
     console.log(params);
-    // encode it again and decode it
-    let encoded = handler.encrypt(querystring.stringify(params));
-    let decoded = handler.decrypt(encoded);
+    //encode it again and decode it
+    let encoded = handler.encrypt(utf8.encode(querystring.stringify(params)));
+    console.log(encoded);
+    if (encoded == req.query.data) {
+        console.log('match');
+    }
+    else {
+        console.log('no match');
+    }
+    const t2 = 'a0R%2FcYjbjzunULAyO%2BrrFeOF5p%2BW2k1rhLrMd0jOJgEYSGe8MwaHDWgMyBzLzrJboLzD0ZxF1f1ms5dAmiLSOKFRMJJ7LyjQtGPKuW8qYiqrPLoGUVsLAO7MPDObZwt%2Fgf1czIRq8hAoOcaeGCD%2FhmR%2Fh%2FJFU%2FEfzF8JbVvajOX0QG9MV%2FxMZV8SscJ0286Z'
+    let decoded = handler.decrypt(utf8.encode(t2));
     console.log(decoded);
     let myjsonObject = {};
     myjsonObject.name="rajesh";
