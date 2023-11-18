@@ -44,11 +44,16 @@ app.get("/epic/test/provider", (req, res, next) => {
     //console.log(req.query);
     // set the iss URL received as launch parameter
     epicProviderSmartSettings.iss = req.query.iss;
-    smart(req, res).authorize(epicProviderSmartSettings).catch(next);
-    const key = session.SMART_KEY; // random string
-    const state = session[key];
-    console.log(session);
+    smart(req, res).authorize(epicProviderSmartSettings)
+    .catch(next);
 });
+
+function loggerMiddleware(req, res) {
+
+    console.log(res.req.session);
+    console.log(res.req.session.SMART_KEY);
+    console.log(res.req.session[res.req.session.SMART_KEY]);
+};
 
 
 /**** Epic Patient ****/
@@ -64,6 +69,7 @@ app.get("/epic/test/patient", (req, res, next) => {
     // set the iss URL received as launch parameter
     epicPatientSmartSettings.iss = req.query.iss;
     smart(req, res).authorize(epicPatientSmartSettings).catch(next);
+    console.log('smart key = ' + req.session.SMART_KEY);
 });
 
 
@@ -101,14 +107,21 @@ app.get("/cerner/test/patient", (req, res, next) => {
 app.get("/callback", (req, res) => {
     console.log(req.query);
     //console.log("callback called")
-    smart(req, res).ready().then(client => handler2(client, res)).catch(err=>console.log(err));
+    smart(req, res).ready()
+    .then(client => handler2(client, res)).catch(err=>console.log(err));
 });
 
 
 async function handler2(client, res) {
-    //console.log(`access token = ${client.state.tokenResponse.access_token}`);
-    //console.log(`client response = `);
-    //console.log(client);
+    sessionData = res.req.session[res.req.session.SMART_KEY];
+    console.log(sessionData);
+    const foo = {
+        clientID: sessionData.clientId,
+        serverUrl: sessionData.serverUrl,
+        accessToken: sessionData.tokenResponse.access_token,
+        key: sessionData.key
+    }
+    console.log(JSON.stringify(foo, null, "\n"));
     res.type("json").send(JSON.stringify(client.state.tokenResponse, null, 4));
 } 
 
