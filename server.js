@@ -119,7 +119,8 @@ async function handler2(client, res) {
         clientID: sessionData.clientId,
         serverUrl: sessionData.serverUrl,
         accessToken: sessionData.tokenResponse.access_token,
-        key: sessionData.key
+        key: sessionData.key,
+        expires_in: sessionData.tokenResponse.expires_in
     }
     console.log(JSON.stringify(foo, null, "\n"));
     res.type("json").send(JSON.stringify(client.state.tokenResponse, null, 4));
