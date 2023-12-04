@@ -8,6 +8,7 @@ require('dotenv').config();
 const ssohandler = require('./ssohandler.js');
 const querystring = require('querystring');
 const utf8 = require('utf8');
+const got = require('got');
 
 //EPIC EHR settings
 const EPIC_PROVIDER_CLIENT_ID = "83970d92-5423-40ae-a7bf-e9bc9820b5ee";
@@ -44,6 +45,7 @@ app.get("/epic/test/provider", (req, res, next) => {
     //console.log(req.query);
     // set the iss URL received as launch parameter
     epicProviderSmartSettings.iss = req.query.iss;
+    // validate iss
     smart(req, res).authorize(epicProviderSmartSettings)
     .catch(next);
 });
@@ -147,27 +149,28 @@ const EPIC_CLIENT_ID = "52d7ef24-a2db-4fcd-a347-366c140c0b21";
 
 app.get("/launch", (req, res) => {
     const { query, method } = req;
+    validateFHIR(req.query.iss);
     res.json({query, method})
 })
 
 app.get("/launch2", async (req, res) => {
-    const metadata = await epicClient.getMetaData(req.query.iss, EPIC_CLIENT_ID);
+    const metadata = await epicClient.getMetaData(req.query.iss, EPIC_PATIENT_CLIENT_ID);
     res.json({metadata})
 })
 
 app.get("/launch3", async (req, res) => {
-    const metadata = await epicClient.getEndpoints(req.query.iss, EPIC_CLIENT_ID);
+    const metadata = await epicClient.getEndpoints(req.query.iss, EPIC_PATIENT_CLIENT_ID);
     res.json({metadata})
 })
 
 app.get("/launch4", async (req, res) => {
-    const metadata = await epicClient.getEndpoints(req.query.iss, EPIC_CLIENT_ID);
+    const metadata = await epicClient.getEndpoints(req.query.iss, EPIC_PATIENT_CLIENT_ID);
     const scope = "launch";
     const state = uuid();
 
     const authorizationCode = await epicClient.getAuthorizationCode2(
         metadata.authorizeUri,
-        EPIC_CLIENT_ID,
+        EPIC_PATIENT_CLIENT_ID,
         req.query.launch, 
         req.query.iss,
         "http://localhost:3000/redirectPage",
@@ -220,6 +223,21 @@ app.get('/legacyauth', (req, res) => {
     console.log(querystring.stringify(myjsonObject));
     res.json(string_params || req.query.data);
   })
+
+
+
+
+
+async function validateFHIR(url) {
+    let qs = querystring.stringify({iss: url})
+    let queryURL = 'https://epicfhirvalidator-mvpcmjxn6q-uc.a.run.app/validateServer/?' + qs;
+    console.log(queryURL);
+    try {
+        await got.get(queryURL);
+    } catch (error) {
+        console.error(error);
+    }
+  }
 
 
 app.listen(3000, () => {
