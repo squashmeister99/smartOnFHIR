@@ -150,17 +150,12 @@ const EPIC_CLIENT_ID = "52d7ef24-a2db-4fcd-a347-366c140c0b21";
 app.get("/launch", (req, res) => {
     const { query, method } = req;
     validateFHIR(req.query.iss)
-    .then(response => {
-        console.log(`response = ${response}`);
-        if (response) {
-            res.json({query, method});
-        }
-        else{
-            res.status(403).send();
-        }
+    .then(() => {
+        res.json({query, method});
     })
-    .catch(error => {
-        console.error(error);
+    .catch(() => {
+        // fhir server validation failed
+        res.status(403).send();
     });
 })
 
@@ -250,18 +245,10 @@ async function validateFHIR(url) {
                   iss: url
                 }
               })
-        
-            switch (response.statusCode) {
-              case 200:
-                return true;
-              default:
-                // Handle other response codes
-                console.error(`error status: ${response.statusCode}`);
-                return false;
-            }
-          } catch (error) {
-            console.error('Error fetching data:');
-            return false;
+
+          } catch (e) {
+            console.error(e, e.stack);
+            throw new Error('unsupported FHIR server')
         }
     }
 
