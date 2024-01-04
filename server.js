@@ -149,8 +149,19 @@ const EPIC_CLIENT_ID = "52d7ef24-a2db-4fcd-a347-366c140c0b21";
 
 app.get("/launch", (req, res) => {
     const { query, method } = req;
-    validateFHIR(req.query.iss);
-    res.json({query, method})
+    validateFHIR(req.query.iss)
+    .then(response => {
+        console.log(`response = ${response}`);
+        if (response) {
+            res.json({query, method});
+        }
+        else{
+            res.status(403).send();
+        }
+    })
+    .catch(error => {
+        console.error(error);
+    });
 })
 
 app.get("/launch2", async (req, res) => {
@@ -225,19 +236,34 @@ app.get('/legacyauth', (req, res) => {
   })
 
 
-
-
-
 async function validateFHIR(url) {
-    let qs = querystring.stringify({iss: url})
-    let queryURL = 'https://epicfhirvalidator-mvpcmjxn6q-uc.a.run.app/validateServer/?' + qs;
-    console.log(queryURL);
-    try {
-        await got.get(queryURL);
-    } catch (error) {
-        console.error(error);
+    const queryURL = 'https://epicfhirvalidator-mvpcmjxn6q-uc.a.run.app/validateServer';
+
+        try {
+            const timeout = 1000;
+            const response = await got(queryURL, {
+                timeout,
+                retry: {
+                    limit: 0 // Disable retries entirely
+                  }, 
+                searchParams: {
+                  iss: url
+                }
+              })
+        
+            switch (response.statusCode) {
+              case 200:
+                return true;
+              default:
+                // Handle other response codes
+                console.error(`error status: ${response.statusCode}`);
+                return false;
+            }
+          } catch (error) {
+            console.error('Error fetching data:');
+            return false;
+        }
     }
-  }
 
 
 app.listen(3000, () => {
